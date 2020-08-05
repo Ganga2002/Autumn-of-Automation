@@ -1,0 +1,261 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="umic_gripper">
+
+ <xacro:property name="width" value="0.30"/>
+ <xacro:property name="length" value="0.30"/>
+ <xacro:property name="heigth" value="0.20"/>
+ 
+ <!--materials-->
+ <material name="white">
+  <color rgba="1.0 1.0 1.0 1.0"/>
+ </material>
+ <material name="blue">
+  <color rgba="0.0 0.0 0.8 1.0"/>
+ </material>
+
+ <!--default inertial-->
+ <xacro:macro name="default_inertial" params="mass">
+   <inertial>
+     <mass value="${mass}" />
+     <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
+   </inertial>
+ </xacro:macro>
+
+ <link name="base_link">
+  
+  <!--pose>0.0 0 0.1 0 0 0</pose-->
+  
+	<visual>
+   <geometry>
+    <box size="${width} ${length} ${heigth}"/>
+   </geometry>
+   <material name="blue"/>
+  </visual>
+
+	<xacro:default_inertial mass="10"/>
+
+  <!--inertial>
+   <mass value="10"/>
+   <origin xyz="0.0 0.0 0.1" rpy="0 0 0"/>
+   <inertia ixx="0.5" ixy="0.5" ixz="0.4" iyy="0.4" iyz="0.4" izz="0.4"/>
+  </inertial-->
+	
+	<collision>
+	 <origin xyz="0 0 0"/>
+	 <geometry>
+    <box size="${width} ${length} ${heigth}"/>
+   </geometry>
+	</collision>
+	
+ </link>
+ 
+ <xacro:property name="wheel_width" value="0.03"/>
+ <xacro:property name="wheel_radius" value="0.05"/>
+ <xacro:macro name="wheel" params="prefix1 prefix2 reflect1 reflect2">
+  
+	<link name="${prefix1}_${prefix2}_wheel">
+   
+	 <visual>
+    <geometry>
+     <cylinder length="${wheel_width}" radius="${wheel_radius}"/>
+    </geometry>
+    <origin rpy="0 1.57075 0"/>
+    <material name="white"/>
+   </visual>
+
+   <xacro:default_inertial mass="1"/>
+	 <!--inertial>
+    <mass value="2"/>
+		<origin xyz="0 0 0" rpy="0 1.5707 0"/>
+		<cylinder_inertia m="2" r="${wheel_radius}" h="${wheel_width}"/>
+    <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+   </inertial-->
+
+	 <collision>
+		<origin xyz="0 0 0" rpy="0 1.5707 0"/>
+		<geometry>
+		 <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+		</geometry>
+	 </collision>
+
+	</link>
+
+  <joint name="base_to_${prefix1}_${prefix2}_wheel" type="continuous">
+   <parent link="base_link"/>
+   <child link="${prefix1}_${prefix2}_wheel"/>
+   <axis xyz="1 0 0"/>
+   <origin xyz="${reflect2*(width/2-0.01)} ${reflect1*(length/2-wheel_radius)} -${heigth/2+wheel_radius}" />
+  </joint>
+ </xacro:macro>
+ 
+ <xacro:wheel prefix1="front" prefix2="right" reflect1="1" reflect2="1" />
+ <xacro:wheel prefix1="front" prefix2="left" reflect1="1" reflect2="-1" />
+ <xacro:wheel prefix1="rear" prefix2="right" reflect1="-1" reflect2="1" />
+ <xacro:wheel prefix1="rear" prefix2="left" reflect1="-1" reflect2="-1" />
+ 
+ <link name="gripper_pole">
+  
+	<visual>
+   <geometry>
+    <cylinder length="0.14" radius="0.01"/>
+   </geometry>
+   <origin rpy="1.57075 0 0" xyz="0 0.07 0"/>
+  </visual>
+  
+	<xacro:default_inertial mass="0.05"/>
+	<!--inertial>
+   <mass value="0.05"/>
+	 <origin xyz="0 0 0"/>
+   <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+  </inertial-->
+	
+	<collision>
+	 <geometry>
+		<cylinder length="0.14" radius="0.01"/>
+	 </geometry>
+	 <origin xyz="0 0.07 0" rpy="1.57075 0 0"/>
+	</collision>
+ 
+ </link>
+ 
+ <joint name="gripper_extension" type="prismatic">
+  <parent link="base_link"/>
+  <child link="gripper_pole"/>
+  <limit effort="1000" lower="0" upper="0.10" velocity="0.5"/>
+  <origin xyz="0 0.01 ${heigth/2+0.01}" rpy="0 0 0"/>
+ </joint>
+
+ <link name="left_gripper">
+
+  <visual>
+   <origin rpy="0 0 1.57075"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger.dae"/>
+   </geometry>
+  </visual>
+	
+	<xacro:default_inertial mass="0.05"/>
+  <!--inertial>
+   <mass value="0.05"/>
+   <inertia ixx="0.4" ixy="0.4" ixz="0.4" iyy="0.4" iyz="0.4" izz="0.4"/>
+  </inertial-->
+
+  <collision>
+   <origin rpy="0 0 1.57075"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger.dae"/>
+   </geometry>
+  </collision>
+	 
+ </link>
+
+ <joint name="left_gripper_joint" type="revolute">
+  <axis xyz="0 0 1"/>
+  <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+  <origin xyz="-0.01 0.14 0"/>
+  <parent link="gripper_pole"/>
+  <child link="left_gripper"/>
+ </joint>
+
+ <link name="left_tip">
+
+  <visual>
+   <origin xyz="0 0 0" rpy="0 0 1.57075"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger_tip.dae"/>
+   </geometry>
+  </visual>
+
+	<xacro:default_inertial mass="0.05"/>
+  <!--inertial>
+   <mass value="10"/>
+   <inertia ixx="0.4" ixy="0.4" ixz="0.4" iyy="0.4" iyz="0.4" izz="0.4"/>
+  </inertial-->
+
+  <collision>
+   <origin xyz="0 0 0" rpy="0 0 1.57075"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger_tip.dae"/>
+   </geometry>
+  </collision>
+	
+ </link>    
+ 
+ <joint name="left_tip_joint" type="fixed">
+  <parent link="left_gripper"/>
+  <child link="left_tip"/>
+  <origin xyz="0.005 0.09 0"/>
+ </joint>
+
+ <link name="right_gripper">
+
+  <visual>
+   <origin rpy="-3.1415 0 1.57075"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger.dae"/>
+   </geometry>
+  </visual>
+
+	<xacro:default_inertial mass="0.05"/>
+  <!--inertial>
+   <mass value="10"/>
+   <inertia ixx="0.4" ixy="0.4" ixz="0.4" iyy="0.4" iyz="0.4" izz="0.4"/>
+  </inertial-->
+
+  <collision>
+   <origin rpy="-3.1415 0 1.57075"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger.dae"/>
+   </geometry>
+  </collision>
+
+ </link>
+
+ <joint name="right_gripper_joint" type="revolute">
+  <axis xyz="0 0 -1"/>
+  <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+  <origin rpy="0 0 0" xyz="0.01 0.14 0"/>
+  <parent link="gripper_pole"/>
+  <child link="right_gripper"/>
+ </joint>
+
+ <link name="right_tip">
+
+  <visual>
+   <origin rpy="-3.1415 0 1.57075" xyz="0 0 0"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger_tip.dae"/>
+   </geometry>
+  </visual>
+	
+	<xacro:default_inertial mass="0.05"/>
+  <!--inertial>
+   <mass value="10"/>
+   <inertia ixx="0.4" ixy="0.4" ixz="0.4" iyy="0.4" iyz="0.4" izz="0.4"/>
+  </inertial-->
+
+  <collision>
+   <origin rpy="-3.1415 0 1.57075" xyz="0 0 0"/>
+   <geometry>
+    <mesh filename="package://urdf_tutorial/meshes/l_finger_tip.dae"/>
+   </geometry>
+  </collision>
+
+ </link>
+
+
+ <joint name="right_tip_joint" type="fixed">
+  <parent link="right_gripper"/>
+  <child link="right_tip"/>
+  <origin xyz="0.005 0.09 0"/>
+ </joint>
+ 
+ <!--Gazebo Plugin -->
+ <gazebo>
+	<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+	 <robotNamespace>/</robotNamespace>
+	</plugin>
+ </gazebo>
+
+
+</robot>
